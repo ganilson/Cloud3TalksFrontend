@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 interface Event {
   id: string;
   title: string;
   date: Date;
   description: string;
+  meetingLink: string;  // Adicionamos o link da reunião
+
 }
 
 export const EventCalendar = () => {
@@ -15,19 +18,30 @@ export const EventCalendar = () => {
       id: '1',
       title: 'Cloud Architecture Workshop',
       date: new Date(2024, 3, 15),
-      description: 'Learn about modern cloud architecture patterns and best practices.'
+      description: 'Learn about modern cloud architecture patterns and best practices.',
+      meetingLink: 'https://meet.google.com/xyz-abc-def' // Exemplo de link do Google Meet
+
     },
     {
       id: '2',
       title: 'DevOps Masterclass',
       date: new Date(2024, 3, 20),
-      description: 'Deep dive into DevOps practices and tools.'
+      description: 'Deep dive into DevOps practices and tools.',
+      meetingLink: 'https://meet.google.com/xyz-abc-def' // Exemplo de link do Google Meet
+
     }
   ]);
 
   const addToGoogleCalendar = (event: Event) => {
-    const startTime = format(event.date, "yyyyMMdd'T'HHmmss'Z'");
-    const endTime = format(new Date(event.date.getTime() + 2 * 60 * 60 * 1000), "yyyyMMdd'T'HHmmss'Z'");
+    // Convert to the user's local time zone if needed
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const eventDateInTimeZone = toZonedTime(event.date, timeZone);
+
+    const startTime = format(eventDateInTimeZone, "yyyyMMdd'T'HHmmss'Z'");
+    const endTime = format(
+      toZonedTime(new Date(event.date.getTime() + 2 * 60 * 60 * 1000), timeZone),
+      "yyyyMMdd'T'HHmmss'Z'"
+    );
     
     const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startTime}/${endTime}&details=${encodeURIComponent(event.description)}`;
     
@@ -54,6 +68,7 @@ export const EventCalendar = () => {
               <button
                 onClick={() => addToGoogleCalendar(event)}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                aria-label={`Add ${event.title} to Google Calendar`}
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 Add to Calendar
